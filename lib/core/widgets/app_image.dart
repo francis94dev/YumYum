@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 
 class AppImage extends StatelessWidget {
   final String imageUrl;
+  final bool isLocal;
   final BoxFit fit;
   final double? width;
   final double? height;
