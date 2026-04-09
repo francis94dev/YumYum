@@ -1,7 +1,7 @@
 import 'dart:typed_data';
+import 'dart:math';
 import 'user_model.dart';
 import 'package:latlong2/latlong.dart';
-
 class ProductModel {
   final String id;
   final String title;
@@ -43,7 +43,8 @@ class ProductModel {
       price: (json['price'] == null || json['price'] == '') 
           ? null 
           : (json['price'] is String ? double.tryParse(json['price']) : (json['price'] as num).toDouble()),
-      location: const LatLng(40.4168, -3.7038), // Default Madrid
+      location: LatLng(40.4168 + (Random().nextDouble() - 0.5) * 0.02, -3.7038 + (Random().nextDouble() - 0.5) * 0.02),
+
       allergens: (json['allergens'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     );
   }

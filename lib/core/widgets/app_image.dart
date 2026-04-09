@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/network/api_constants.dart';
 
@@ -24,9 +25,23 @@ class AppImage extends StatelessWidget {
       finalUrl = '${ApiConstants.baseUrl}$imageUrl';
     }
 
-    final bool isLocal = !finalUrl.startsWith('http');
+    final bool isHttp = finalUrl.startsWith('http');
+    final bool isBlob = finalUrl.startsWith('blob:');
 
-    if (isLocal) {
+    if (kIsWeb) {
+      if (isHttp || isBlob) {
+        return Image.network(
+          finalUrl,
+          fit: fit,
+          width: width,
+          height: height,
+          errorBuilder: (context, error, stackTrace) => _ErrorWidget(),
+        );
+      }
+      return _ErrorWidget();
+    }
+
+    if (!isHttp) {
       return Image.file(
         File(finalUrl),
         fit: fit,

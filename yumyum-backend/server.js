@@ -205,30 +205,42 @@ app.post('/chat/ai', async (req, res) => {
       const reply = response.text();
       res.json({ reply });
     } catch (innerErr) {
-      console.error('INNER GEMINI ERROR (Flash):', innerErr);
+      console.error('INNER GEMINI ERROR (Flash):', innerErr.message || innerErr);
       
       try {
-        // Segundo intento con gemini-1.5-flash-latest
-        const flashLatest = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-        const result = await flashLatest.generateContent(SYSTEM_PROMPT + "\n\nUsuario: " + message);
+        // Segundo intento con gemini-1.5-pro
+        console.log('--- Falling back to Gemini 1.5 Pro ---');
+        const proModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const result = await proModel.generateContent(SYSTEM_PROMPT + "\n\nUsuario: " + message);
         const response = await result.response;
         res.json({ reply: response.text() });
       } catch (err2) {
-        console.error('LAST AI ERROR:', err2);
+        console.error('LAST AI ERROR:', err2.message || err2);
         
-        // RESPUESTA DE EMERGENCIA (Local) si la API de Google falla por completo
-        let localReply = "Lo siento, mi conexión con los servidores de Google IA está teniendo problemas técnicos. ";
-        
-        const msg = message.toLowerCase();
-        if (msg.includes("gamba") && msg.includes("aguacate")) {
-          localReply += "¡Pero tengo una respuesta guardada para ti! Con gambas y aguacate puedes hacer unos **Tacos de Gambas con Crema de Aguacate**. Saltea las gambas con ajo y lima, y sirve sobre tortillas con aguacate machacado, cilantro y un poco de cebolla morada. ¡Es delicioso y rápido!";
-        } else if (msg.includes("hola") || msg.includes("ayuda")) {
-          localReply += "¡Hola! Soy tu asistente de YumYum. Puedo ayudarte a buscar recetas o consejos de cocina. Inténtalo de nuevo en unos minutos o pregúntame algo sobre ingredientes específicos.";
-        } else {
-          localReply += "Parece que hay un problema con la configuración de la clave de API en este momento. Por favor, revisa la consola del servidor.";
+        try {
+          // Tercer intento con gemini-pro (1.0)
+          console.log('--- Falling back to Gemini Pro (1.0) ---');
+          const oldModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+          const result = await oldModel.generateContent(SYSTEM_PROMPT + "\n\nUsuario: " + message);
+          const response = await result.response;
+          res.json({ reply: response.text() });
+        } catch (err3) {
+          console.error('CRITICAL AI ERROR:', err3.message || err3);
+          
+          // RESPUESTA DE EMERGENCIA (Local) si la API de Google falla por completo
+          let localReply = "Lo siento, mi conexión con los servidores de Google IA está teniendo problemas técnicos. ";
+          
+          const msg = message.toLowerCase();
+          if (msg.includes("gamba") || msg.includes("aguacate") || msg.includes("patata")) {
+            localReply += "¡Pero tengo una respuesta guardada para ti! Con esos ingredientes puedes hacer unas deliciosas **Gambas al Ajillo con Patatas Panaderas**. Opcionalmente puedes añadir un poco de aguacate al lado para darle frescura.";
+          } else if (msg.includes("hola") || msg.includes("ayuda")) {
+            localReply += "¡Hola! Soy tu asistente de YumYum. Puedo ayudarte a buscar recetas o consejos de cocina. Inténtalo de nuevo en unos minutos o pregúntame algo sobre ingredientes específicos.";
+          } else {
+            localReply += "Parece que hay un problema con la configuración de la clave de API en este momento. Por favor, revisa la consola del servidor.";
+          }
+          
+          res.json({ reply: localReply });
         }
-        
-        res.json({ reply: localReply });
       }
     }
   } catch (err) {
