@@ -10,6 +10,11 @@ class MainScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => context.push('/ai-chat'),
+        backgroundColor: Colors.green[700],
+        child: const Icon(Icons.smart_toy, color: Colors.white),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _calculateSelectedIndex(context),
         onDestinationSelected: (int index) => _onItemTapped(index, context),

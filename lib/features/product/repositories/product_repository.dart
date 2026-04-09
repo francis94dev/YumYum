@@ -3,13 +3,15 @@ import '../../../models/user_model.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'api_product_repository.dart';
+
 abstract class ProductRepository {
   Future<List<ProductModel>> getProducts();
   Future<ProductModel> addProduct(ProductModel product);
 }
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return MockProductRepository();
+  return ApiProductRepository();
 });
 
 class MockProductRepository implements ProductRepository {

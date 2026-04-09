@@ -1,4 +1,6 @@
 import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,7 +29,7 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
   final _priceController = TextEditingController();
   String _type = 'exchange';
   bool _isLoading = false;
-  File? _imageFile;
+  dynamic _imageFile;
   final List<String> _selectedAllergens = [];
 
   final List<String> _availableAllergens = [
@@ -50,7 +52,11 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        if (kIsWeb) {
+          _imageFile = pickedFile.path;
+        } else {
+          _imageFile = File(pickedFile.path);
+        }
       });
     }
   }
@@ -78,13 +84,16 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
 
     setState(() => _isLoading = true);
 
-    String imageUrl = 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500';
-    if (_imageFile != null) {
-      final localPath = await _saveImageLocally(_imageFile!);
-      if (localPath != null) {
-        imageUrl = localPath;
-      }
+    if (_imageFile == null) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor, selecciona una imagen primero')),
+      );
+      return;
     }
+
+    final imageUrl = kIsWeb ? (_imageFile as String) : (_imageFile as File).path;
+    final webBytes = kIsWeb ? await XFile(imageUrl).readAsBytes() : null;
 
     final newProduct = ProductModel(
       id: const Uuid().v4(),
@@ -97,15 +106,23 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
       price: _type == 'sell' ? double.tryParse(_priceController.text) : null,
       location: const LatLng(40.4180, -3.7050), // Mock location
       allergens: _selectedAllergens,
+      webImageBytes: webBytes,
     );
 
-    await ref.read(productRepositoryProvider).addProduct(newProduct);
-    ref.invalidate(productsProvider); // Refresh feed
-    
-    if (mounted) {
-      setState(() => _isLoading = false);
-      context.go('/feed');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Oferta publicada!')));
+    try {
+      await ref.read(productRepositoryProvider).addProduct(newProduct);
+      ref.invalidate(productsProvider); // Refresh feed
+      
+      if (mounted) {
+        setState(() => _isLoading = false);
+        context.go('/feed');
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('¡Oferta publicada!')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
     }
   }
 
@@ -129,7 +146,9 @@ class _AddProductScreenState extends ConsumerState<AddProductScreen> {
                     borderRadius: BorderRadius.circular(16),
                     image: _imageFile != null
                         ? DecorationImage(
-                            image: FileImage(_imageFile!),
+                            image: (kIsWeb 
+                                ? NetworkImage(_imageFile as String) 
+                                : FileImage(_imageFile as File)) as ImageProvider,
                             fit: BoxFit.cover,
                           )
                         : null,

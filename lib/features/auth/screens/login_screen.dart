@@ -82,7 +82,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               TextButton(
                 onPressed: () {
-                  // context.push('/signup'); // Missing signup for now but we'll add it or skip it for demo
+                  context.push('/register');
                 },
                 child: const Text('¿No tienes cuenta? Regístrate'),
               )

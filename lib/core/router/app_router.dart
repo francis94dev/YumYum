@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/screens/login_screen.dart';
+import '../../features/auth/screens/register_screen.dart';
 import '../../features/feed/screens/feed_screen.dart';
 import '../../features/main/screens/main_screen.dart';
 import '../../features/map/screens/map_screen.dart';
@@ -15,6 +16,8 @@ import '../../features/profile/screens/favorites_screen.dart';
 import '../../features/profile/screens/orders_screen.dart';
 import '../../features/profile/screens/my_offers_screen.dart';
 
+import '../../features/chat/screens/ai_chat_screen.dart';
+
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/login',
@@ -22,6 +25,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: '/register',
+        builder: (context, state) => const RegisterScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => MainScreen(child: child),
@@ -37,6 +44,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/add',
             builder: (context, state) => const AddProductScreen(),
+          ),
+          GoRoute(
+            path: '/ai-chat',
+            builder: (context, state) => const AiChatScreen(),
           ),
           GoRoute(
             path: '/chats',

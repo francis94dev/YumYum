@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/network/api_constants.dart';
 
 class AppImage extends StatelessWidget {
   final String imageUrl;
@@ -18,11 +19,16 @@ class AppImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isLocal = !imageUrl.startsWith('http');
+    String finalUrl = imageUrl;
+    if (imageUrl.startsWith('/uploads')) {
+      finalUrl = '${ApiConstants.baseUrl}$imageUrl';
+    }
+
+    final bool isLocal = !finalUrl.startsWith('http');
 
     if (isLocal) {
       return Image.file(
-        File(imageUrl),
+        File(finalUrl),
         fit: fit,
         width: width,
         height: height,
@@ -31,7 +37,7 @@ class AppImage extends StatelessWidget {
     }
 
     return CachedNetworkImage(
-      imageUrl: imageUrl,
+      imageUrl: finalUrl,
       fit: fit,
       width: width,
       height: height,

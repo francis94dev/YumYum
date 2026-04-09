@@ -24,4 +24,22 @@ class UserModel {
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
     );
   }
+
+  factory UserModel.fromJson(Map<String, dynamic> json) {
+    return UserModel(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      email: json['email'] as String,
+      profileImageUrl: json['profileImageUrl'] as String? ?? 'https://i.pravatar.cc/150?u=${json['email']}',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'email': email,
+      'profileImageUrl': profileImageUrl,
+    };
+  }
 }

@@ -3,18 +3,75 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/app_image.dart';
+import '../../../core/widgets/rating_bar.dart';
 import '../repositories/product_repository.dart';
 import '../providers/favorites_provider.dart';
 import '../../feed/screens/feed_screen.dart';
+import '../../auth/providers/auth_provider.dart';
+import '../repositories/rating_repository.dart';
+import '../../../models/rating_model.dart';
+import 'package:uuid/uuid.dart';
 
 class ProductDetailScreen extends ConsumerWidget {
   final String productId;
 
   const ProductDetailScreen({super.key, required this.productId});
 
+  void _showRatingDialog(BuildContext context, WidgetRef ref, String targetId) {
+    int ratingValue = 5;
+    final commentController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Valorar'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            StatefulBuilder(builder: (context, setState) {
+              return RatingBar(
+                rating: ratingValue.toDouble(),
+                onRatingChanged: (v) => setState(() => ratingValue = v),
+              );
+            }),
+            const SizedBox(height: 16),
+            TextField(
+              controller: commentController,
+              decoration: const InputDecoration(labelText: 'Comentario (opcional)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          ElevatedButton(
+            onPressed: () async {
+              final user = ref.read(authProvider).value;
+              if (user == null) return;
+
+              final rating = RatingModel(
+                id: const Uuid().v4(),
+                targetId: targetId,
+                targetType: 'recipe',
+                authorId: user.id,
+                value: ratingValue,
+                comment: commentController.text,
+              );
+
+              await ref.read(ratingRepositoryProvider).addRating(rating);
+              ref.invalidate(ratingsProvider(targetId));
+              if (context.mounted) Navigator.pop(context);
+            },
+            child: const Text('Enviar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final productsAsync = ref.watch(productsProvider);
+    final ratingsAsync = ref.watch(ratingsProvider(productId));
 
     return Scaffold(
       appBar: AppBar(
@@ -123,6 +180,48 @@ class ProductDetailScreen extends ConsumerWidget {
                                 );
                               }).toList(),
                             ),
+                      const SizedBox(height: 32),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Valoraciones',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          TextButton.icon(
+                            onPressed: () => _showRatingDialog(context, ref, productId),
+                            icon: const Icon(Icons.star_outline),
+                            label: const Text('Valorar'),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      ratingsAsync.when(
+                        data: (ratings) {
+                          if (ratings.isEmpty) {
+                            return const Text('Aún no hay valoraciones.', style: TextStyle(color: Colors.grey));
+                          }
+                          return ListView.builder(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: ratings.length,
+                            itemBuilder: (context, index) {
+                              final rating = ratings[index];
+                              return ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                leading: const CircleAvatar(child: Icon(Icons.person)),
+                                title: RatingBar(rating: rating.value.toDouble(), size: 16),
+                                subtitle: rating.comment != null && rating.comment!.isNotEmpty
+                                    ? Text(rating.comment!)
+                                    : null,
+                              );
+                            },
+                          );
+                        },
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (e, st) => Text('Error: $e'),
+                      ),
+                      const SizedBox(height: 40),
                     ],
                   ),
                 ),
