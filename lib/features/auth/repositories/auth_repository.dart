@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import 'api_auth_repository.dart';
+import 'supabase_auth_repository.dart';
 
 abstract class AuthRepository {
   Future<UserModel> login(String email, String password);
@@ -12,7 +13,7 @@ abstract class AuthRepository {
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
-  return ApiAuthRepository();
+  return SupabaseAuthRepository();
 });
 
 class MockAuthRepository implements AuthRepository {

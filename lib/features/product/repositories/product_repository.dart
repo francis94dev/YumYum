@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import 'api_product_repository.dart';
+import 'supabase_product_repository.dart';
 
 abstract class ProductRepository {
   Future<List<ProductModel>> getProducts();
@@ -11,7 +12,7 @@ abstract class ProductRepository {
 }
 
 final productRepositoryProvider = Provider<ProductRepository>((ref) {
-  return ApiProductRepository();
+  return SupabaseProductRepository();
 });
 
 class MockProductRepository implements ProductRepository {
